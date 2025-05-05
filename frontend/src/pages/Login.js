@@ -14,6 +14,12 @@ function Login() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  /*    Back Button function
+  const back = () => {
+    navigate("/register"); // redirect to login page
+  };
+  */
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -23,7 +29,6 @@ function Login() {
         formData
       );
       console.log("User Logged in:", response.data);
-      // alert("Login successful!");
       navigate("/user");
       sessionStorage.setItem("username", response.data.name);
     } catch (error) {
@@ -55,6 +60,14 @@ function Login() {
         <button type="submit" className="bg-blue-500 text-white py-2 rounded">
           Login
         </button>
+
+        {/* Back button */}
+        {/* <button
+        onClick={back} className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+        >
+          Back
+        </button> */}
+      
       </form>
     </div>
   );
