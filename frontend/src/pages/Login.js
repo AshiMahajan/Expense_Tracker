@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
     password: "",
   });
+
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -17,28 +19,23 @@ function Login() {
 
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/registerUserFunction`,
+        `${process.env.REACT_APP_LOGIN_URL}/loginUserFunction`,
         formData
       );
-      console.log("User registered:", response.data);
-      alert("Registration successful!");
+      console.log("User Logged in:", response.data);
+      // alert("Login successful!");
+      navigate("/user");
+      sessionStorage.setItem("username", response.data.name);
     } catch (error) {
-      console.error("Registration failed:", error);
-      alert("Registration failed.");
+      console.error("Login failed:", error);
+      alert("Login failed.");
     }
   };
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl mb-4">Register</h2>
+      <h2 className="text-2xl mb-4">Login</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-2 max-w-md">
-        <input
-          name="name"
-          placeholder="Name"
-          value={formData.name}
-          onChange={handleChange}
-          className="border p-2"
-        />
         <input
           name="email"
           type="email"
@@ -56,7 +53,7 @@ function Login() {
           className="border p-2"
         />
         <button type="submit" className="bg-blue-500 text-white py-2 rounded">
-          Register
+          Login
         </button>
       </form>
     </div>
