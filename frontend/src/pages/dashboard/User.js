@@ -1,19 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function UserDashboard() {
   const [username, setUsername] = useState("");
   const [entries, setEntries] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ tag: "", field: "", name: "", amount: "" });
+  const [formData, setFormData] = useState({ tag: "", field: "", name: "", amount: "", date: "" });
   const [editIndex, setEditIndex] = useState(null);
+  const [showUploadPopup, setShowUploadPopup] = useState(false);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     const sessionUsername = sessionStorage.getItem("username");
-    setUsername(sessionUsername || "User");
+    if (!sessionUsername) {
+      navigate("/login");
+    } else {
+      setUsername(sessionUsername);
+      fetchEntries(sessionUsername);
+    }
   }, []);
+
+  const fetchEntries = async (username) => {
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_EXPENSE_URL}/getexpenses`, {
+        params: { username }
+      });
+      setEntries(response.data);
+    } catch (error) {
+      console.error("Error fetching entries:", error);
+    }
+  };
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -22,7 +40,10 @@ function UserDashboard() {
 
   const handleAdd = () => {
     if (!showForm) {
-      setFormData({ tag: "", field: "", name: "", amount: "" });
+      const currentDate = new Date().toLocaleDateString(undefined, {
+        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+      });
+      setFormData({ tag: "", field: "", name: "", amount: "", date: currentDate });
       setEditIndex(null);
       setShowForm(true);
     }
@@ -33,43 +54,123 @@ function UserDashboard() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    if (editIndex !== null) {
-      const updatedEntries = [...entries];
-      updatedEntries[editIndex] = formData;
-      setEntries(updatedEntries);
-    } else {
-      setEntries((prev) => [...prev, formData]);
+  const handleSave = async () => {
+    const currentDate = new Date().toLocaleDateString(undefined, {
+      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+    });
+
+    const newEntry = {
+      ...formData,
+      date: formData.date || currentDate,
+      username,
+    };
+
+    try {
+      if (editIndex !== null) {
+        const updatedEntries = [...entries];
+        updatedEntries[editIndex] = newEntry;
+        setEntries(updatedEntries);
+        await updateEntry(newEntry);
+      } else {
+        setEntries((prev) => [...prev, newEntry]);
+        await saveEntry(newEntry);
+      }
+      setFormData({ tag: "", field: "", name: "", amount: "", date: "" });
+      setEditIndex(null);
+      setShowForm(false);
+    } catch (error) {
+      console.error("Error saving data:", error);
     }
-    setFormData({ tag: "", field: "", name: "", amount: "" });
-    setEditIndex(null);
-    setShowForm(false);
   };
 
   const handleEdit = (index) => {
     setFormData(entries[index]);
     setEditIndex(index);
-    setShowForm(true);
+    setShowForm(false);
   };
 
   const handleCancel = () => {
-    setFormData({ tag: "", field: "", name: "", amount: "" });
+    setFormData({ tag: "", field: "", name: "", amount: "", date: "" });
     setEditIndex(null);
     setShowForm(false);
   };
 
-  const handleDelete = (index) => {
+  const handleDelete = async (index) => {
+    const entryToDelete = entries[index];
     const updatedEntries = entries.filter((_, i) => i !== index);
     setEntries(updatedEntries);
+    try {
+      await deleteEntry(entryToDelete.id);
+    } catch (error) {
+      console.error("Error deleting entry:", error);
+    }
+  };
+
+  const handleUploadClick = () => {
+    setShowUploadPopup(true);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Simulating receipt data extraction
+    setTimeout(() => {
+      const extractedData = {
+        tag: "Food",
+        field: "Lunch",
+        name: file.name,
+        amount: "200",
+        date: new Date().toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }),
+        username
+      };
+      setEntries((prev) => [...prev, extractedData]);
+      setShowUploadPopup(false);
+    }, 1000);
+  };
+
+  const saveEntry = async (expenseData) => {
+  try {
+    const response = await axios.post(
+      'https://iusej0tqcd.execute-api.us-east-1.amazonaws.com/saveexpense',
+      expenseData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    );
+    console.log('Expense saved:', response.data);
+  } catch (error) {
+    console.error('Error saving expense:', error.response ? error.response.data : error.message);
+  }
+};
+
+  const updateEntry = async (entry) => {
+    try {
+      const response = await axios.put(`${process.env.REACT_APP_EXPENSE_URL}/updateexpense/${entry.id}`, entry);
+      console.log("Entry updated:", response.data);
+    } catch (error) {
+      console.error("Error updating entry:", error.response ? error.response.data : error);
+    }
+  };
+
+  const deleteEntry = async (id) => {
+    try {
+      const response = await axios.delete(`${process.env.REACT_APP_EXPENSE_URL}/deleteexpense/${id}`);
+      console.log("Entry deleted:", response.data);
+    } catch (error) {
+      console.error("Error deleting entry:", error.response ? error.response.data : error);
+    }
   };
 
   return (
     <div className="flex min-h-screen">
-      {/* Left Sidebar */}
       <div className="w-1/5 bg-blue-200 p-6 flex flex-col justify-between">
         <div className="self-center mt-5 p-2">
           <button
-            onClick={() => {}}
+            onClick={handleUploadClick}
             className="font-semibold mb-4 border bg-white rounded-md border-black px-4 py-2 text-base tracking-widest"
           >
             Upload Receipt
@@ -83,7 +184,6 @@ function UserDashboard() {
         </button>
       </div>
 
-      {/* Right Content */}
       <div className="w-4/5 bg-blue-50 relative p-6">
         <div className="flex justify-end items-center mb-6">
           <span className="text-gray-700 font-medium mr-4">Hi, {username}</span>
@@ -99,157 +199,101 @@ function UserDashboard() {
             Add
           </button>
 
-          {/* Table */}
           <div className="overflow-x-auto w-full px-6">
             <table className="table-auto w-full border border-black text-center">
               <thead className="bg-gray-200">
                 <tr>
-                  <th className="border border-black px-4 py-2">Tag</th>
-                  <th className="border border-black px-4 py-2">Field</th>
-                  <th className="border border-black px-4 py-2">Name</th>
-                  <th className="border border-black px-4 py-2">Amount</th>
-                  <th className="border border-black px-4 py-2">Edit</th>
-                  <th className="border border-black px-4 py-2">Delete</th>
+                  <th className="border px-4 py-2">Tag</th>
+                  <th className="border px-4 py-2">Field</th>
+                  <th className="border px-4 py-2">Name</th>
+                  <th className="border px-4 py-2">Amount</th>
+                  <th className="border px-4 py-2">Date</th>
+                  <th className="border px-4 py-2">Edit</th>
+                  <th className="border px-4 py-2">Delete</th>
                 </tr>
               </thead>
-
               <tbody>
-              {entries.length > 0 ? (
-                entries.map((entry, index) => (
+                {entries.map((entry, index) => (
                   editIndex === index ? (
-                    // Show inline form for editing
                     <tr key={index} className="bg-yellow-100">
-                      <td className="border border-black px-2 py-1">
-                        <input
-                          type="text"
-                          name="tag"
-                          value={formData.tag}
-                          onChange={handleChange}
-                          className="w-full p-1 border rounded"
-                        />
+                      <td className="border px-2 py-1">
+                        <input name="tag" value={formData.tag} onChange={handleChange} className="w-full p-1 border rounded" />
                       </td>
-                      <td className="border border-black px-2 py-1">
-                        <input
-                          type="text"
-                          name="field"
-                          value={formData.field}
-                          onChange={handleChange}
-                          className="w-full p-1 border rounded"
-                        />
+                      <td className="border px-2 py-1">
+                        <input name="field" value={formData.field} onChange={handleChange} className="w-full p-1 border rounded" />
                       </td>
-                      <td className="border border-black px-2 py-1">
-                        <input
-                          type="text"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleChange}
-                          className="w-full p-1 border rounded"
-                        />
+                      <td className="border px-2 py-1">
+                        <input name="name" value={formData.name} onChange={handleChange} className="w-full p-1 border rounded" />
                       </td>
-                      <td className="border border-black px-2 py-1">
-                        <input
-                          type="number"
-                          name="amount"
-                          value={formData.amount}
-                          onChange={handleChange}
-                          className="w-full p-1 border rounded"
-                        />
+                      <td className="border px-2 py-1">
+                        <input name="amount" value={formData.amount} onChange={handleChange} className="w-full p-1 border rounded" />
                       </td>
-                      <td className="border border-black px-2 py-1">
-                        <button className="text-green-600 font-semibold" onClick={handleSave}>
-                          Save
-                        </button>
+                      <td className="border px-2 py-1">
+                        <input name="date" value={formData.date} onChange={handleChange} className="w-full p-1 border rounded" placeholder="Current date will be used" />
                       </td>
-                      <td className="border border-black px-2 py-1">
-                        <button className="text-red-600 font-semibold" onClick={handleCancel}>
-                          ❌
-                        </button>
+                      <td className="border px-2 py-1">
+                        <button onClick={handleSave} className="text-green-600 font-semibold">Save</button>
+                      </td>
+                      <td className="border px-2 py-1">
+                        <button onClick={handleCancel} className="text-red-600 font-semibold">❌</button>
                       </td>
                     </tr>
                   ) : (
-                    // Regular row display
                     <tr key={index}>
-                      <td className="border border-black px-4 py-2">{entry.tag}</td>
-                      <td className="border border-black px-4 py-2">{entry.field}</td>
-                      <td className="border border-black px-4 py-2">{entry.name}</td>
-                      <td className="border border-black px-4 py-2">{entry.amount}</td>
-                      <td className="border border-black px-4 py-2">
-                        <button className="text-blue-500 underline" onClick={() => handleEdit(index)}>
-                          Edit
-                        </button>
+                      <td className="border px-4 py-2">{entry.tag}</td>
+                      <td className="border px-4 py-2">{entry.field}</td>
+                      <td className="border px-4 py-2">{entry.name}</td>
+                      <td className="border px-4 py-2">{entry.amount}</td>
+                      <td className="border px-4 py-2">{entry.date}</td>
+                      <td className="border px-4 py-2">
+                        <button className="text-blue-500 underline" onClick={() => handleEdit(index)}>Edit</button>
                       </td>
-                      <td className="border border-black px-4 py-2">
-                        <button className="text-red-500 underline" onClick={() => handleDelete(index)}>
-                          Delete
-                        </button>
+                      <td className="border px-4 py-2">
+                        <button className="text-red-500 underline" onClick={() => handleDelete(index)}>Delete</button>
                       </td>
                     </tr>
                   )
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="border border-black px-4 py-2 text-gray-500">
-                    No data available.
-                  </td>
-                </tr>
-              )}
-            
-              {/* Show form at bottom only for 'Add' mode */}
-              {showForm && editIndex === null && (
-                <tr className="bg-yellow-100">
-                  <td className="border border-black px-2 py-1">
-                    <input
-                      type="text"
-                      name="tag"
-                      value={formData.tag}
-                      onChange={handleChange}
-                      className="w-full p-1 border rounded"
-                    />
-                  </td>
-                  <td className="border border-black px-2 py-1">
-                    <input
-                      type="text"
-                      name="field"
-                      value={formData.field}
-                      onChange={handleChange}
-                      className="w-full p-1 border rounded"
-                    />
-                  </td>
-                  <td className="border border-black px-2 py-1">
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full p-1 border rounded"
-                    />
-                  </td>
-                  <td className="border border-black px-2 py-1">
-                    <input
-                      type="number"
-                      name="amount"
-                      value={formData.amount}
-                      onChange={handleChange}
-                      className="w-full p-1 border rounded"
-                    />
-                  </td>
-                  <td className="border border-black px-2 py-1">
-                    <button className="text-green-600 font-semibold" onClick={handleSave}>
-                      Save
-                    </button>
-                  </td>
-                  <td className="border border-black px-2 py-1">
-                    <button className="text-red-600 font-semibold" onClick={handleCancel}>
-                      ❌
-                    </button>
-                  </td>
-                </tr>
+                ))}
+                {showForm && editIndex === null && (
+                  <tr className="bg-green-100">
+                    <td className="border px-2 py-1">
+                      <input name="tag" value={formData.tag} onChange={handleChange} className="w-full p-1 border rounded" />
+                    </td>
+                    <td className="border px-2 py-1">
+                      <input name="field" value={formData.field} onChange={handleChange} className="w-full p-1 border rounded" />
+                    </td>
+                    <td className="border px-2 py-1">
+                      <input name="name" value={formData.name} onChange={handleChange} className="w-full p-1 border rounded" />
+                    </td>
+                    <td className="border px-2 py-1">
+                      <input name="amount" value={formData.amount} onChange={handleChange} className="w-full p-1 border rounded" />
+                    </td>
+                    <td className="border px-2 py-1">
+                      <input name="date" value={formData.date} onChange={handleChange} className="w-full p-1 border rounded" />
+                    </td>
+                    <td className="border px-2 py-1">
+                      <button onClick={handleSave} className="text-green-600 font-semibold">Save</button>
+                    </td>
+                    <td className="border px-2 py-1">
+                      <button onClick={handleCancel} className="text-red-600 font-semibold">❌</button>
+                    </td>
+                  </tr>
                 )}
-                </tbody>
+              </tbody>
             </table>
           </div>
         </div>
       </div>
+
+      {showUploadPopup && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-8 rounded shadow-xl">
+            <h2 className="text-xl mb-4">Upload Receipt</h2>
+            <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} />
+            <button onClick={() => setShowUploadPopup(false)} className="mt-4 bg-red-500 text-white py-2 px-6 rounded">Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
