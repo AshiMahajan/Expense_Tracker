@@ -18,20 +18,8 @@
 //       navigate("/login");
 //     } else {
 //       setUsername(sessionUsername);
-//       fetchEntries(sessionUsername);
 //     }
 //   }, []);
-
-//   const fetchEntries = async (username) => {
-//     try {
-//       const response = await axios.get(`${process.env.REACT_APP_EXPENSE_URL}/getexpenses`, {
-//         params: { username }
-//       });
-//       setEntries(response.data);
-//     } catch (error) {
-//       console.error("Error fetching entries:", error);
-//     }
-//   };
 
 //   const handleLogout = () => {
 //     sessionStorage.clear();
@@ -39,14 +27,12 @@
 //   };
 
 //   const handleAdd = () => {
-//     if (!showForm) {
-//       const currentDate = new Date().toLocaleDateString(undefined, {
-//         weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
-//       });
-//       setFormData({ tag: "", field: "", name: "", amount: "", date: currentDate });
-//       setEditIndex(null);
-//       setShowForm(true);
-//     }
+//     const currentDate = new Date().toLocaleDateString(undefined, {
+//       weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+//     });
+//     setFormData({ tag: "", field: "", name: "", amount: "", date: currentDate });
+//     setEditIndex(null);
+//     setShowForm(true);
 //   };
 
 //   const handleChange = (e) => {
@@ -54,34 +40,42 @@
 //     setFormData((prev) => ({ ...prev, [name]: value }));
 //   };
 
-//   const handleSave = async () => {
-//     const currentDate = new Date().toLocaleDateString(undefined, {
-//       weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
-//     });
+// const API_ENDPOINT = "https://8w7s679qsi.execute-api.us-east-1.amazonaws.com/userexpense"; // 🔁 Replace with your actual endpoint
 
-//     const newEntry = {
-//       ...formData,
-//       date: formData.date || currentDate,
-//       username,
-//     };
+// const handleSave = async () => {
+//   const currentDate = new Date().toLocaleDateString(undefined, {
+//     weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+//   });
 
-//     try {
-//       if (editIndex !== null) {
-//         const updatedEntries = [...entries];
-//         updatedEntries[editIndex] = newEntry;
-//         setEntries(updatedEntries);
-//         await updateEntry(newEntry);
-//       } else {
-//         setEntries((prev) => [...prev, newEntry]);
-//         await saveEntry(newEntry);
-//       }
-//       setFormData({ tag: "", field: "", name: "", amount: "", date: "" });
-//       setEditIndex(null);
-//       setShowForm(false);
-//     } catch (error) {
-//       console.error("Error saving data:", error);
-//     }
+//   const newEntry = {
+//     ...formData,
+//     date: formData.date || currentDate,
+//     email: sessionStorage.getItem("email"),
+//     timestamp: Date.now()
 //   };
+
+//   try {
+//     const response = await axios.post(API_ENDPOINT, newEntry);
+
+//     console.log("Data saved:", response.data);
+
+//     if (editIndex !== null) {
+//       const updatedEntries = [...entries];
+//       updatedEntries[editIndex] = newEntry;
+//       setEntries(updatedEntries);
+//     } else {
+//       setEntries((prev) => [...prev, newEntry]);
+//     }
+
+//     setFormData({ tag: "", field: "", name: "", amount: "", date: "" });
+//     setEditIndex(null);
+//     setShowForm(false);
+//   } catch (error) {
+//     console.error("Failed to save data:", error);
+//     alert("Failed to save expense. Check console for details.");
+//   }
+// };
+
 
 //   const handleEdit = (index) => {
 //     setFormData(entries[index]);
@@ -95,15 +89,9 @@
 //     setShowForm(false);
 //   };
 
-//   const handleDelete = async (index) => {
-//     const entryToDelete = entries[index];
+//   const handleDelete = (index) => {
 //     const updatedEntries = entries.filter((_, i) => i !== index);
 //     setEntries(updatedEntries);
-//     try {
-//       await deleteEntry(entryToDelete.id);
-//     } catch (error) {
-//       console.error("Error deleting entry:", error);
-//     }
 //   };
 
 //   const handleUploadClick = () => {
@@ -114,55 +102,20 @@
 //     const file = e.target.files[0];
 //     if (!file) return;
 
-//     // Simulating receipt data extraction
 //     setTimeout(() => {
 //       const extractedData = {
 //         tag: "Food",
 //         field: "Lunch",
 //         name: file.name,
 //         amount: "200",
-//         date: new Date().toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }),
+//         date: new Date().toLocaleDateString(undefined, {
+//           weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+//         }),
 //         username
 //       };
 //       setEntries((prev) => [...prev, extractedData]);
 //       setShowUploadPopup(false);
 //     }, 1000);
-//   };
-
-//   const saveEntry = async (expenseData) => {
-//   try {
-//     const response = await axios.post(
-//       'https://iusej0tqcd.execute-api.us-east-1.amazonaws.com/saveexpense',
-//       expenseData,
-//       {
-//         headers: {
-//           'Content-Type': 'application/json',
-//           "Access-Control-Allow-Origin": "*",
-//         },
-//       }
-//     );
-//     console.log('Expense saved:', response.data);
-//   } catch (error) {
-//     console.error('Error saving expense:', error.response ? error.response.data : error.message);
-//   }
-// };
-
-//   const updateEntry = async (entry) => {
-//     try {
-//       const response = await axios.put(`${process.env.REACT_APP_EXPENSE_URL}/updateexpense/${entry.id}`, entry);
-//       console.log("Entry updated:", response.data);
-//     } catch (error) {
-//       console.error("Error updating entry:", error.response ? error.response.data : error);
-//     }
-//   };
-
-//   const deleteEntry = async (id) => {
-//     try {
-//       const response = await axios.delete(`${process.env.REACT_APP_EXPENSE_URL}/deleteexpense/${id}`);
-//       console.log("Entry deleted:", response.data);
-//     } catch (error) {
-//       console.error("Error deleting entry:", error.response ? error.response.data : error);
-//     }
 //   };
 
 //   return (
@@ -229,7 +182,7 @@
 //                         <input name="amount" value={formData.amount} onChange={handleChange} className="w-full p-1 border rounded" />
 //                       </td>
 //                       <td className="border px-2 py-1">
-//                         <input name="date" value={formData.date} onChange={handleChange} className="w-full p-1 border rounded" placeholder="Current date will be used" />
+//                         <input name="date" value={formData.date} onChange={handleChange} className="w-full p-1 border rounded" />
 //                       </td>
 //                       <td className="border px-2 py-1">
 //                         <button onClick={handleSave} className="text-green-600 font-semibold">Save</button>
@@ -300,6 +253,7 @@
 
 // export default UserDashboard;
 
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -313,15 +267,29 @@ function UserDashboard() {
   const [showUploadPopup, setShowUploadPopup] = useState(false);
 
   const navigate = useNavigate();
+  const API_ENDPOINT = "https://8w7s679qsi.execute-api.us-east-1.amazonaws.com/userexpense"; // Your API
 
   useEffect(() => {
     const sessionUsername = sessionStorage.getItem("username");
-    if (!sessionUsername) {
+    const sessionEmail = sessionStorage.getItem("email");
+
+    if (!sessionUsername || !sessionEmail) {
       navigate("/login");
     } else {
       setUsername(sessionUsername);
+      fetchEntries(sessionEmail); // Fetch existing data
     }
   }, []);
+
+  const fetchEntries = async (email) => {
+    try {
+      const response = await axios.get(`${API_ENDPOINT}?email=${email}`);
+      setEntries(response.data);
+    } catch (error) {
+      console.error("Error fetching entries:", error);
+      alert("Failed to fetch your expense data.");
+    }
+  };
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -342,42 +310,38 @@ function UserDashboard() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-const API_ENDPOINT = "https://8w7s679qsi.execute-api.us-east-1.amazonaws.com/userexpense"; // 🔁 Replace with your actual endpoint
+  const handleSave = async () => {
+    const currentDate = new Date().toLocaleDateString(undefined, {
+      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+    });
 
-const handleSave = async () => {
-  const currentDate = new Date().toLocaleDateString(undefined, {
-    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
-  });
+    const newEntry = {
+      ...formData,
+      date: formData.date || currentDate,
+      email: sessionStorage.getItem("email"),
+      timestamp: Date.now()
+    };
 
-  const newEntry = {
-    ...formData,
-    date: formData.date || currentDate,
-    email: sessionStorage.getItem("email"),
-    timestamp: Date.now()
-  };
+    try {
+      const response = await axios.post(API_ENDPOINT, newEntry);
+      console.log("Data saved:", response.data);
 
-  try {
-    const response = await axios.post(API_ENDPOINT, newEntry);
+      if (editIndex !== null) {
+        const updatedEntries = [...entries];
+        updatedEntries[editIndex] = newEntry;
+        setEntries(updatedEntries);
+      } else {
+        setEntries((prev) => [...prev, newEntry]);
+      }
 
-    console.log("Data saved:", response.data);
-
-    if (editIndex !== null) {
-      const updatedEntries = [...entries];
-      updatedEntries[editIndex] = newEntry;
-      setEntries(updatedEntries);
-    } else {
-      setEntries((prev) => [...prev, newEntry]);
+      setFormData({ tag: "", field: "", name: "", amount: "", date: "" });
+      setEditIndex(null);
+      setShowForm(false);
+    } catch (error) {
+      console.error("Failed to save data:", error);
+      alert("Failed to save expense. Check console for details.");
     }
-
-    setFormData({ tag: "", field: "", name: "", amount: "", date: "" });
-    setEditIndex(null);
-    setShowForm(false);
-  } catch (error) {
-    console.error("Failed to save data:", error);
-    alert("Failed to save expense. Check console for details.");
-  }
-};
-
+  };
 
   const handleEdit = (index) => {
     setFormData(entries[index]);
