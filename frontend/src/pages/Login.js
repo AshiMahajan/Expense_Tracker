@@ -29,6 +29,10 @@ function Login() {
         formData
       );
       console.log("User Logged in:", response.data);
+      
+      sessionStorage.setItem("username", response.data.name);
+      sessionStorage.setItem("email", formData.email);
+
       navigate("/user");
       sessionStorage.setItem("username", response.data.name);
     } catch (error) {
