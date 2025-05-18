@@ -51,8 +51,25 @@ function UserDashboard() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  
+    if (name === "date") {
+      const selectedDate = new Date(value);
+      const formattedDate = selectedDate.toLocaleDateString("en-GB", {
+        weekday: "short",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+      setFormData((prev) => ({ ...prev, [name]: formattedDate }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
+  
+  // const handleChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setFormData((prev) => ({ ...prev, [name]: value }));
+  // };
 
   const handleSave = async () => {
     const email = sessionStorage.getItem("email");
@@ -75,7 +92,6 @@ function UserDashboard() {
         updatedEntries[editIndex] = updatedEntry;
         setEntries(updatedEntries);
       } else {
-        // POST request to add new entry
         await axios.post(API_ENDPOINT, updatedEntry);
         setEntries((prev) => [...prev, updatedEntry]);
       }
@@ -88,45 +104,26 @@ function UserDashboard() {
       alert("Failed to save/update expense.");
     }
   };
-  
-  // const handleSave = async () => {
-  //   const currentDate = new Date().toLocaleDateString(undefined, {
-  //     weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
-  //   });
-
-  //   const newEntry = {
-  //     ...formData,
-  //     date: formData.date || currentDate,
-  //     email: sessionStorage.getItem("email"),
-  //     timestamp: Date.now()
-  //   };
-
-  //   try {
-  //     const response = await axios.post(API_ENDPOINT, newEntry);
-  //     console.log("Data saved:", response.data);
-
-  //     if (editIndex !== null) {
-  //       const updatedEntries = [...entries];
-  //       updatedEntries[editIndex] = newEntry;
-  //       setEntries(updatedEntries);
-  //     } else {
-  //       setEntries((prev) => [...prev, newEntry]);
-  //     }
-
-  //     setFormData({ tag: "", field: "", name: "", amount: "", date: "" });
-  //     setEditIndex(null);
-  //     setShowForm(false);
-  //   } catch (error) {
-  //     console.error("Failed to save data:", error);
-  //     alert("Failed to save expense. Check console for details.");
-  //   }
-  // };
 
   const handleEdit = (index) => {
-    setFormData(entries[index]);
+    const selected = entries[index];
+    const dateFormatted = new Date(selected.date).toLocaleDateString("en-GB", {
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  
+    setFormData({ ...selected, date: dateFormatted });
     setEditIndex(index);
     setShowForm(false);
   };
+  
+  // const handleEdit = (index) => {
+  //   setFormData(entries[index]);
+  //   setEditIndex(index);
+  //   setShowForm(false);
+  // };
 
   const handleCancel = () => {
     setFormData({ tag: "", field: "", name: "", amount: "", date: "" });
@@ -136,7 +133,7 @@ function UserDashboard() {
 
   const handleDelete = async (index) => {
     const entryToDelete = entries[index];
-    const expenseId = entryToDelete.timestamp; // or entryToDelete.expense_id
+    const expenseId = entryToDelete.timestamp;
   
     try {
       await axios.delete(`${API_ENDPOINT}?email=${sessionStorage.getItem("email")}&expense_id=${entryToDelete.expense_id}`);
@@ -244,7 +241,8 @@ function UserDashboard() {
                         <input name="amount" value={formData.amount} onChange={handleChange} className="w-full p-1 border rounded" />
                       </td>
                       <td className="border px-2 py-1">
-                        <input name="date" value={formData.date} onChange={handleChange} className="w-full p-1 border rounded" />
+                        {/* <input name="date" value={formData.date} onChange={handleChange} className="w-full p-1 border rounded" /> */}
+                        <input name="date" type="date" onChange={handleChange} className="w-full p-1 border rounded" />
                       </td>
                       <td className="border px-2 py-1">
                         <button onClick={handleSave} className="text-green-600 font-semibold">Save</button>
@@ -284,7 +282,8 @@ function UserDashboard() {
                       <input name="amount" value={formData.amount} onChange={handleChange} className="w-full p-1 border rounded" />
                     </td>
                     <td className="border px-2 py-1">
-                      <input name="date" value={formData.date} onChange={handleChange} className="w-full p-1 border rounded" />
+                      <input name="date" type="date" onChange={handleChange} className="w-full p-1 border rounded" />
+                      {/* <input name="date" value={formData.date} onChange={handleChange} className="w-full p-1 border rounded" /> */}
                     </td>
                     <td className="border px-2 py-1">
                       <button onClick={handleSave} className="text-green-600 font-semibold">Save</button>
