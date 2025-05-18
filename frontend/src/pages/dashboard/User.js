@@ -55,37 +55,72 @@ function UserDashboard() {
   };
 
   const handleSave = async () => {
+    const email = sessionStorage.getItem("email");
     const currentDate = new Date().toLocaleDateString(undefined, {
       weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
     });
-
-    const newEntry = {
+  
+    const updatedEntry = {
       ...formData,
       date: formData.date || currentDate,
-      email: sessionStorage.getItem("email"),
-      timestamp: Date.now()
+      email: email,
+      timestamp: formData.timestamp || Date.now()
     };
-
+  
     try {
-      const response = await axios.post(API_ENDPOINT, newEntry);
-      console.log("Data saved:", response.data);
-
       if (editIndex !== null) {
+        // PUT request to update existing entry
+        await axios.put(API_ENDPOINT, updatedEntry);
         const updatedEntries = [...entries];
-        updatedEntries[editIndex] = newEntry;
+        updatedEntries[editIndex] = updatedEntry;
         setEntries(updatedEntries);
       } else {
-        setEntries((prev) => [...prev, newEntry]);
+        // POST request to add new entry
+        await axios.post(API_ENDPOINT, updatedEntry);
+        setEntries((prev) => [...prev, updatedEntry]);
       }
-
+  
       setFormData({ tag: "", field: "", name: "", amount: "", date: "" });
       setEditIndex(null);
       setShowForm(false);
     } catch (error) {
-      console.error("Failed to save data:", error);
-      alert("Failed to save expense. Check console for details.");
+      console.error("Failed to save or update data:", error);
+      alert("Failed to save/update expense.");
     }
   };
+  
+  // const handleSave = async () => {
+  //   const currentDate = new Date().toLocaleDateString(undefined, {
+  //     weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+  //   });
+
+  //   const newEntry = {
+  //     ...formData,
+  //     date: formData.date || currentDate,
+  //     email: sessionStorage.getItem("email"),
+  //     timestamp: Date.now()
+  //   };
+
+  //   try {
+  //     const response = await axios.post(API_ENDPOINT, newEntry);
+  //     console.log("Data saved:", response.data);
+
+  //     if (editIndex !== null) {
+  //       const updatedEntries = [...entries];
+  //       updatedEntries[editIndex] = newEntry;
+  //       setEntries(updatedEntries);
+  //     } else {
+  //       setEntries((prev) => [...prev, newEntry]);
+  //     }
+
+  //     setFormData({ tag: "", field: "", name: "", amount: "", date: "" });
+  //     setEditIndex(null);
+  //     setShowForm(false);
+  //   } catch (error) {
+  //     console.error("Failed to save data:", error);
+  //     alert("Failed to save expense. Check console for details.");
+  //   }
+  // };
 
   const handleEdit = (index) => {
     setFormData(entries[index]);
@@ -99,10 +134,27 @@ function UserDashboard() {
     setShowForm(false);
   };
 
-  const handleDelete = (index) => {
-    const updatedEntries = entries.filter((_, i) => i !== index);
-    setEntries(updatedEntries);
+  const handleDelete = async (index) => {
+    const entryToDelete = entries[index];
+    const expenseId = entryToDelete.timestamp; // or entryToDelete.expense_id
+  
+    try {
+      await axios.delete(`${API_ENDPOINT}?email=${sessionStorage.getItem("email")}&expense_id=${entryToDelete.expense_id}`);
+
+  
+      const updatedEntries = entries.filter((_, i) => i !== index);
+      setEntries(updatedEntries);
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete expense.");
+    }
   };
+  
+  
+  // const handleDelete = (index) => {
+  //   const updatedEntries = entries.filter((_, i) => i !== index);
+  //   setEntries(updatedEntries);
+  // };
 
   const handleUploadClick = () => {
     setShowUploadPopup(true);
