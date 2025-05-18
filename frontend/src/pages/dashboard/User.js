@@ -11,7 +11,7 @@ function UserDashboard() {
   const [showUploadPopup, setShowUploadPopup] = useState(false);
 
   const navigate = useNavigate();
-  const API_ENDPOINT = "https://8w7s679qsi.execute-api.us-east-1.amazonaws.com/userexpense"; // Your API
+  const API_ENDPOINT = "https://8w7s679qsi.execute-api.us-east-1.amazonaws.com/userexpense";
 
   useEffect(() => {
     const sessionUsername = sessionStorage.getItem("username");
@@ -21,7 +21,7 @@ function UserDashboard() {
       navigate("/login");
     } else {
       setUsername(sessionUsername);
-      fetchEntries(sessionEmail); // Fetch existing data
+      fetchEntries(sessionEmail);
     }
   }, []);
 
