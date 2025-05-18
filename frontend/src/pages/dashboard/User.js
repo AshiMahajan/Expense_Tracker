@@ -6,7 +6,7 @@ function UserDashboard() {
   const [username, setUsername] = useState("");
   const [entries, setEntries] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ tag: "", field: "", name: "", amount: "", date: "" });
+  const [formData, setFormData] = useState({ tag: "", description: "", amount: "", date: "" });
   const [editIndex, setEditIndex] = useState(null);
   const [showUploadPopup, setShowUploadPopup] = useState(false);
 
@@ -44,14 +44,13 @@ function UserDashboard() {
     const currentDate = new Date().toLocaleDateString(undefined, {
       weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
     });
-    setFormData({ tag: "", field: "", name: "", amount: "", date: currentDate });
+    setFormData({ tag: "", description: "", amount: "", date: currentDate });
     setEditIndex(null);
     setShowForm(true);
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-  
     if (name === "date") {
       const selectedDate = new Date(value);
       const formattedDate = selectedDate.toLocaleDateString("en-GB", {
@@ -65,28 +64,24 @@ function UserDashboard() {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
-  
-  // const handleChange = (e) => {
-  //   const { name, value } = e.target;
-  //   setFormData((prev) => ({ ...prev, [name]: value }));
-  // };
 
   const handleSave = async () => {
     const email = sessionStorage.getItem("email");
     const currentDate = new Date().toLocaleDateString(undefined, {
       weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
     });
-  
+
     const updatedEntry = {
       ...formData,
       date: formData.date || currentDate,
-      email: email,
-      timestamp: formData.timestamp || Date.now()
+      email,
+      timestamp: formData.timestamp || Date.now(),
+      expense_id: formData.expense_id, // <-- This is important for PUT
     };
-  
+    
+
     try {
       if (editIndex !== null) {
-        // PUT request to update existing entry
         await axios.put(API_ENDPOINT, updatedEntry);
         const updatedEntries = [...entries];
         updatedEntries[editIndex] = updatedEntry;
@@ -95,8 +90,8 @@ function UserDashboard() {
         await axios.post(API_ENDPOINT, updatedEntry);
         setEntries((prev) => [...prev, updatedEntry]);
       }
-  
-      setFormData({ tag: "", field: "", name: "", amount: "", date: "" });
+
+      setFormData({ tag: "", description: "", amount: "", date: "" });
       setEditIndex(null);
       setShowForm(false);
     } catch (error) {
@@ -114,31 +109,21 @@ function UserDashboard() {
       year: "numeric",
     });
   
-    setFormData({ ...selected, date: dateFormatted });
+    setFormData({ ...selected, date: dateFormatted }); // ensure expense_id is part of this
     setEditIndex(index);
     setShowForm(false);
   };
-  
-  // const handleEdit = (index) => {
-  //   setFormData(entries[index]);
-  //   setEditIndex(index);
-  //   setShowForm(false);
-  // };
 
   const handleCancel = () => {
-    setFormData({ tag: "", field: "", name: "", amount: "", date: "" });
+    setFormData({ tag: "", description: "", amount: "", date: "" });
     setEditIndex(null);
     setShowForm(false);
   };
 
   const handleDelete = async (index) => {
     const entryToDelete = entries[index];
-    const expenseId = entryToDelete.timestamp;
-  
     try {
       await axios.delete(`${API_ENDPOINT}?email=${sessionStorage.getItem("email")}&expense_id=${entryToDelete.expense_id}`);
-
-  
       const updatedEntries = entries.filter((_, i) => i !== index);
       setEntries(updatedEntries);
     } catch (error) {
@@ -146,12 +131,6 @@ function UserDashboard() {
       alert("Failed to delete expense.");
     }
   };
-  
-  
-  // const handleDelete = (index) => {
-  //   const updatedEntries = entries.filter((_, i) => i !== index);
-  //   setEntries(updatedEntries);
-  // };
 
   const handleUploadClick = () => {
     setShowUploadPopup(true);
@@ -164,8 +143,7 @@ function UserDashboard() {
     setTimeout(() => {
       const extractedData = {
         tag: "Food",
-        field: "Lunch",
-        name: file.name,
+        description: "Lunch from receipt",
         amount: "200",
         date: new Date().toLocaleDateString(undefined, {
           weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
@@ -216,8 +194,7 @@ function UserDashboard() {
               <thead className="bg-gray-200">
                 <tr>
                   <th className="border px-4 py-2">Tag</th>
-                  <th className="border px-4 py-2">Field</th>
-                  <th className="border px-4 py-2">Name</th>
+                  <th className="border px-4 py-2">Description</th>
                   <th className="border px-4 py-2">Amount</th>
                   <th className="border px-4 py-2">Date</th>
                   <th className="border px-4 py-2">Edit</th>
@@ -232,16 +209,12 @@ function UserDashboard() {
                         <input name="tag" value={formData.tag} onChange={handleChange} className="w-full p-1 border rounded" />
                       </td>
                       <td className="border px-2 py-1">
-                        <input name="field" value={formData.field} onChange={handleChange} className="w-full p-1 border rounded" />
-                      </td>
-                      <td className="border px-2 py-1">
-                        <input name="name" value={formData.name} onChange={handleChange} className="w-full p-1 border rounded" />
+                        <input name="description" value={formData.description} onChange={handleChange} className="w-full p-1 border rounded" />
                       </td>
                       <td className="border px-2 py-1">
                         <input name="amount" value={formData.amount} onChange={handleChange} className="w-full p-1 border rounded" />
                       </td>
                       <td className="border px-2 py-1">
-                        {/* <input name="date" value={formData.date} onChange={handleChange} className="w-full p-1 border rounded" /> */}
                         <input name="date" type="date" onChange={handleChange} className="w-full p-1 border rounded" />
                       </td>
                       <td className="border px-2 py-1">
@@ -254,8 +227,7 @@ function UserDashboard() {
                   ) : (
                     <tr key={index}>
                       <td className="border px-4 py-2">{entry.tag}</td>
-                      <td className="border px-4 py-2">{entry.field}</td>
-                      <td className="border px-4 py-2">{entry.name}</td>
+                      <td className="border px-4 py-2">{entry.description}</td>
                       <td className="border px-4 py-2">{entry.amount}</td>
                       <td className="border px-4 py-2">{entry.date}</td>
                       <td className="border px-4 py-2">
@@ -273,17 +245,13 @@ function UserDashboard() {
                       <input name="tag" value={formData.tag} onChange={handleChange} className="w-full p-1 border rounded" />
                     </td>
                     <td className="border px-2 py-1">
-                      <input name="field" value={formData.field} onChange={handleChange} className="w-full p-1 border rounded" />
-                    </td>
-                    <td className="border px-2 py-1">
-                      <input name="name" value={formData.name} onChange={handleChange} className="w-full p-1 border rounded" />
+                      <input name="description" value={formData.description} onChange={handleChange} className="w-full p-1 border rounded" />
                     </td>
                     <td className="border px-2 py-1">
                       <input name="amount" value={formData.amount} onChange={handleChange} className="w-full p-1 border rounded" />
                     </td>
                     <td className="border px-2 py-1">
                       <input name="date" type="date" onChange={handleChange} className="w-full p-1 border rounded" />
-                      {/* <input name="date" value={formData.date} onChange={handleChange} className="w-full p-1 border rounded" /> */}
                     </td>
                     <td className="border px-2 py-1">
                       <button onClick={handleSave} className="text-green-600 font-semibold">Save</button>
