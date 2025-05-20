@@ -6,7 +6,7 @@ import Login from "./pages/Login";
 import axios from "axios";
 import UserDashboard from "./pages/dashboard/User";
 import PrivateRoute from "./components/PrivateRoute";
-
+import VisualizePage from "./pages/dashboard/VisualizePage";
 
 const isLoggedIn = sessionStorage.getItem("username") !== null;
 
@@ -26,6 +26,14 @@ function App() {
   }
 />
 
+      <Route 
+        path="/user/visualize"
+        element={
+        <PrivateRoute>
+          <VisualizePage />
+        </PrivateRoute>
+        }
+      />
       </Routes>
     </Router>
   );

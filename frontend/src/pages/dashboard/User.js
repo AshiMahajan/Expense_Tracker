@@ -10,6 +10,10 @@ function UserDashboard() {
   const [editIndex, setEditIndex] = useState(null);
   const [showUploadPopup, setShowUploadPopup] = useState(false);
 
+  const handleVisualizeClick = () => {
+    navigate("/user/visualize");
+  };
+
   const navigate = useNavigate();
   const API_ENDPOINT = "https://8w7s679qsi.execute-api.us-east-1.amazonaws.com/userexpense";
 
@@ -181,7 +185,12 @@ function UserDashboard() {
 
         <div className="flex flex-col items-center">
           <h1 className="text-4xl font-bold text-gray-800 mb-6">Dashboard</h1>
-
+          <button
+        onClick={handleVisualizeClick}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Visualize
+      </button>
           <button
             onClick={handleAdd}
             className="mb-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 self-start"
