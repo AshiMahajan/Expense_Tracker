@@ -16,8 +16,7 @@ function UserDashboard() {
   const [filterTag, setFilterTag] = useState("");
 
   const navigate = useNavigate();
-  const API_ENDPOINT = "https://8w7s679qsi.execute-api.us-east-1.amazonaws.com/userexpense";
-
+  const API_ENDPOINT = `${process.env.REACT_APP_EXPENSE_URL}/userexpense`;
   const handleVisualizeClick = () => {
     navigate("/user/visualize");
   };
