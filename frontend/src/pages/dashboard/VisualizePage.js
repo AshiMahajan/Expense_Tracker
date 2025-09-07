@@ -11,7 +11,7 @@ import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1"];
-const API_ENDPOINT = "https://8w7s679qsi.execute-api.us-east-1.amazonaws.com/userexpense";
+const API_ENDPOINT = `${process.env.REACT_APP_EXPENSE_URL}/userexpense`;
 
 const VisualizePage = () => {
   const chartRef = useRef();
